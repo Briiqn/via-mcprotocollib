@@ -1,5 +1,15 @@
 package org.geysermc.mcprotocollib.network.netty;
 
+import com.viaversion.vialoader.ViaLoader;
+import com.viaversion.vialoader.impl.platform.ViaBackwardsPlatformImpl;
+import com.viaversion.viaversion.ViaManagerImpl;
+import com.viaversion.viaversion.api.Via;
+import com.viaversion.viaversion.api.ViaManager;
+import com.viaversion.viaversion.api.connection.UserConnection;
+import com.viaversion.viaversion.connection.UserConnectionImpl;
+import com.viaversion.viaversion.protocol.ProtocolPipelineImpl;
+import dev.briiqn.loader.ProtocolLibViaLoader;
+import dev.briiqn.loader.ProtocolLibViaPipeline;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
@@ -22,6 +32,12 @@ public class MinecraftChannelInitializer<S extends Session & ChannelHandler> ext
     @Override
     protected void initChannel(Channel ch) throws Exception {
         S session = createSession(ch);
+        try{
+           if(Via.getManager()!=null);
+        }catch (Throwable throwable){
+            ViaLoader.init(null, new ProtocolLibViaLoader(session.getPacketProtocol().getProtocolVersion()), null, null, ViaBackwardsPlatformImpl::new);
+
+        }
 
         addHandlers(session, ch);
     }
@@ -33,7 +49,8 @@ public class MinecraftChannelInitializer<S extends Session & ChannelHandler> ext
     protected void addHandlers(S session, Channel ch) {
         MinecraftProtocol protocol = session.getPacketProtocol();
         ChannelPipeline pipeline = ch.pipeline();
-
+        final UserConnection connection = new UserConnectionImpl(ch, true);
+        new ProtocolPipelineImpl(connection);
         pipeline.addLast(NetworkConstants.READ_TIMEOUT_NAME, new ReadTimeoutHandler(session.getFlag(BuiltinFlags.READ_TIMEOUT, 30)));
         pipeline.addLast(NetworkConstants.WRITE_TIMEOUT_NAME, new WriteTimeoutHandler(session.getFlag(BuiltinFlags.WRITE_TIMEOUT, 0)));
 
@@ -45,5 +62,6 @@ public class MinecraftChannelInitializer<S extends Session & ChannelHandler> ext
         pipeline.addLast(NetworkConstants.CODEC_NAME, new PacketCodec(session, client));
         pipeline.addLast(NetworkConstants.FLUSH_HANDLER_NAME, new FlushHandler());
         pipeline.addLast(NetworkConstants.MANAGER_NAME, session);
+        pipeline.addLast(new ProtocolLibViaPipeline(connection));
     }
 }

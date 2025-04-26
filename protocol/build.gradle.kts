@@ -1,6 +1,7 @@
 plugins {
     id("mcprotocollib.publish-conventions")
     jacoco
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 version = "1.21.5-SNAPSHOT"
@@ -37,6 +38,12 @@ dependencies {
     // Test dependencies
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.slf4j.simple)
+    implementation("com.viaversion:viaversion-common:5.3.2")
+    implementation("com.viaversion:viabackwards-common:5.3.2")
+    implementation("com.viaversion:viarewind-common:4.0.7")
+    implementation("net.raphimc:ViaLegacy:3.0.9")
+    implementation("com.viaversion:viaaprilfools-common:4.0.1")
+    implementation("com.viaversion:vialoader:4.0.2")
 }
 
 tasks.test {
@@ -49,5 +56,30 @@ tasks.jacocoTestReport {
         xml.required = false
         csv.required = false
         html.outputLocation = layout.buildDirectory.dir("jacocoHtml")
+    }
+}
+
+// ShadowJar configuration
+tasks.shadowJar {
+    archiveClassifier.set("")
+    mergeServiceFiles()
+
+
+    minimize()
+}
+
+tasks.jar {
+    archiveClassifier.set("slim")
+}
+
+tasks.build {
+    dependsOn(tasks.shadowJar)
+}
+
+publishing {
+    publications {
+        getByName<MavenPublication>("maven") {
+            artifact(tasks.shadowJar)
+        }
     }
 }

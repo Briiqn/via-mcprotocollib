@@ -11,6 +11,8 @@ dependencyResolutionManagement {
         maven("https://jitpack.io") {
             name = "jitpack"
         }
+        maven("https://repo.viaversion.com" )
+        maven("https://maven.lenni0451.net/everything")
         mavenCentral()
     }
 }
