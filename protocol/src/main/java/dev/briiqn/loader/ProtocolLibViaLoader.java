@@ -6,8 +6,12 @@ import com.viaversion.viaversion.api.connection.UserConnection;
 import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
 import com.viaversion.viaversion.api.protocol.version.VersionProvider;
 import com.viaversion.viaversion.protocol.version.BaseVersionProvider;
+import lombok.Getter;
+import lombok.Setter;
 
 public class ProtocolLibViaLoader extends VLLoader {
+    @Getter
+    @Setter
     private int protocol =770;
     public ProtocolLibViaLoader() {
     }

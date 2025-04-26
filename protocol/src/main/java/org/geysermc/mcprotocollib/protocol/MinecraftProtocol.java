@@ -131,6 +131,8 @@ public MinecraftProtocol(String username, int protocolVersion){
     public MinecraftProtocol(@NonNull GameProfile profile, String accessToken, int protocolVersion) {
 
         this(MinecraftCodec.CODEC, profile, accessToken);
+        System.out.println("Using version: "+ ProtocolVersion.getProtocol(protocolVersion).getName() + " (" + protocolVersion+")");
+
         this.protocolVersion=protocolVersion;
     }
 

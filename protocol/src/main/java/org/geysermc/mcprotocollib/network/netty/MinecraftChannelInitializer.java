@@ -28,14 +28,14 @@ import java.util.function.Function;
 public class MinecraftChannelInitializer<S extends Session & ChannelHandler> extends ChannelInitializer<Channel> {
     private final Function<Channel, S> sessionFactory;
     private final boolean client;
-
+    private static final ProtocolLibViaLoader VIA_LOADER = new ProtocolLibViaLoader();
     @Override
     protected void initChannel(Channel ch) throws Exception {
         S session = createSession(ch);
         try{
            if(Via.getManager()!=null);
         }catch (Throwable throwable){
-            ViaLoader.init(null, new ProtocolLibViaLoader(session.getPacketProtocol().getProtocolVersion()), null, null, ViaBackwardsPlatformImpl::new);
+            ViaLoader.init(null,VIA_LOADER , null, null, ViaBackwardsPlatformImpl::new);
 
         }
 
@@ -48,6 +48,7 @@ public class MinecraftChannelInitializer<S extends Session & ChannelHandler> ext
 
     protected void addHandlers(S session, Channel ch) {
         MinecraftProtocol protocol = session.getPacketProtocol();
+        VIA_LOADER.setProtocol(protocol.getProtocolVersion());
         ChannelPipeline pipeline = ch.pipeline();
         final UserConnection connection = new UserConnectionImpl(ch, true);
         new ProtocolPipelineImpl(connection);
