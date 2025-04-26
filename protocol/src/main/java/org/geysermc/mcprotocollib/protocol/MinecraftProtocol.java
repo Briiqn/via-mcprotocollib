@@ -128,6 +128,11 @@ public MinecraftProtocol(String username, int protocolVersion){
     public MinecraftProtocol(@NonNull GameProfile profile, String accessToken) {
         this(MinecraftCodec.CODEC, profile, accessToken);
     }
+    public MinecraftProtocol(@NonNull GameProfile profile, String accessToken, int protocolVersion) {
+
+        this(MinecraftCodec.CODEC, profile, accessToken);
+        this.protocolVersion=protocolVersion;
+    }
 
     /**
      * Constructs a new MinecraftProtocol instance for logging in.
