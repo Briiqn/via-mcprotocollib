@@ -12,19 +12,27 @@ import lombok.Setter;
 public class ProtocolLibViaLoader extends VLLoader {
     @Getter
     @Setter
-    private int protocol =770;
+    private int protocol;
+
     public ProtocolLibVersionProvider versionProvider = new ProtocolLibVersionProvider();
 
     public ProtocolLibViaLoader(int protocol) {
         this.protocol = protocol;
         versionProvider.setVersion(protocol);
     }
+
+    public void setProtocol(int protocol) {
+        this.protocol = protocol;
+        versionProvider.setVersion(protocol);
+    }
+
     @Override
     public void load() {
         super.load();
-
+        versionProvider.setVersion(protocol);
         Via.getManager().getProviders().use(VersionProvider.class, versionProvider);
     }
+
     @Override
     public void unload() {
         super.unload();

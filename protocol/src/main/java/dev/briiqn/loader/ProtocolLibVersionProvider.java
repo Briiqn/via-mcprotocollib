@@ -14,8 +14,8 @@ public class ProtocolLibVersionProvider extends BaseVersionProvider {
 
     @Override
     public ProtocolVersion getClosestServerProtocol(UserConnection connection) throws Exception {
-        System.out.println("Overriding protocol version to " + version);
         if (connection.isClientSide()) {
+            System.out.println("Overriding protocol version to " + version);
             return ProtocolVersion.getProtocol(version);
         }
         return super.getClosestServerProtocol(connection);

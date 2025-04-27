@@ -2,15 +2,10 @@ package org.geysermc.mcprotocollib.network.netty;
 
 import com.viaversion.vialoader.ViaLoader;
 import com.viaversion.vialoader.impl.platform.ViaBackwardsPlatformImpl;
-import com.viaversion.viaversion.ViaManagerImpl;
 import com.viaversion.viaversion.api.Via;
-import com.viaversion.viaversion.api.ViaManager;
-import com.viaversion.viaversion.api.connection.UserConnection;
-import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
 import com.viaversion.viaversion.api.protocol.version.VersionProvider;
 import com.viaversion.viaversion.connection.UserConnectionImpl;
 import com.viaversion.viaversion.protocol.ProtocolPipelineImpl;
-import com.viaversion.viaversion.protocol.version.BaseVersionProvider;
 import dev.briiqn.loader.ProtocolLibViaLoader;
 import dev.briiqn.loader.ProtocolLibViaPipeline;
 import io.netty.channel.Channel;
@@ -31,19 +26,30 @@ import java.util.function.Function;
 public class MinecraftChannelInitializer<S extends Session & ChannelHandler> extends ChannelInitializer<Channel> {
     private final Function<Channel, S> sessionFactory;
     private final boolean client;
-    private static  ProtocolLibViaLoader VIA_LOADER =null;
+    private static final ProtocolLibViaLoader VIA_LOADER = new ProtocolLibViaLoader(770);
+    private static boolean viaInitialized = false;
+
     @Override
     protected void initChannel(Channel ch) throws Exception {
         S session = createSession(ch);
-        try{
-           if(Via.getManager().getLoader()!=null){
+        int protocolVersion = session.getPacketProtocol().getProtocolVersion();
 
-           }
-
-        }catch (Throwable throwable){
-            VIA_LOADER= new ProtocolLibViaLoader(session.getPacketProtocol().getProtocolVersion());
-            ViaLoader.init(null,VIA_LOADER , null, null, ViaBackwardsPlatformImpl::new);
-
+        // update the protocol version in the loader object first
+        // (without trying to access Via.getManager() yet)
+        // still dont get why we cant just deinit and reinit via per channel but ok kennytv
+        VIA_LOADER.setProtocol(protocolVersion);
+        synchronized (MinecraftChannelInitializer.class) {
+            if (!viaInitialized) {
+                try {
+                    ViaLoader.init(null, VIA_LOADER, null, null, ViaBackwardsPlatformImpl::new);
+                    viaInitialized = true;
+                } catch (Throwable throwable) {
+                    System.err.println("Failed to initialize ViaLoader: " + throwable.getMessage());
+                    throwable.printStackTrace();
+                }
+            } else if (Via.getManager() != null && Via.getManager().getProviders() != null) {
+                Via.getManager().getProviders().use(VersionProvider.class, VIA_LOADER.versionProvider);
+            }
         }
 
         addHandlers(session, ch);
@@ -55,12 +61,14 @@ public class MinecraftChannelInitializer<S extends Session & ChannelHandler> ext
 
     protected void addHandlers(S session, Channel ch) {
         MinecraftProtocol protocol = session.getPacketProtocol();
-        VIA_LOADER.setProtocol(protocol.getProtocolVersion());
         ChannelPipeline pipeline = ch.pipeline();
-        final UserConnection connection = new UserConnectionImpl(ch, true);
+        final UserConnectionImpl connection = new UserConnectionImpl(ch, true);
         new ProtocolPipelineImpl(connection);
-        pipeline.addLast(NetworkConstants.READ_TIMEOUT_NAME, new ReadTimeoutHandler(session.getFlag(BuiltinFlags.READ_TIMEOUT, 30)));
-        pipeline.addLast(NetworkConstants.WRITE_TIMEOUT_NAME, new WriteTimeoutHandler(session.getFlag(BuiltinFlags.WRITE_TIMEOUT, 0)));
+
+        pipeline.addLast(NetworkConstants.READ_TIMEOUT_NAME,
+            new ReadTimeoutHandler(session.getFlag(BuiltinFlags.READ_TIMEOUT, 30)));
+        pipeline.addLast(NetworkConstants.WRITE_TIMEOUT_NAME,
+            new WriteTimeoutHandler(session.getFlag(BuiltinFlags.WRITE_TIMEOUT, 0)));
 
         pipeline.addLast(NetworkConstants.ENCRYPTION_NAME, new PacketEncryptorCodec());
         pipeline.addLast(NetworkConstants.SIZER_NAME, new PacketSizerCodec(protocol.getPacketHeader()));
