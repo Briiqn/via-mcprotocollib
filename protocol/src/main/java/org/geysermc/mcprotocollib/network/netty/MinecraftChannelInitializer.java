@@ -6,8 +6,11 @@ import com.viaversion.viaversion.ViaManagerImpl;
 import com.viaversion.viaversion.api.Via;
 import com.viaversion.viaversion.api.ViaManager;
 import com.viaversion.viaversion.api.connection.UserConnection;
+import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
+import com.viaversion.viaversion.api.protocol.version.VersionProvider;
 import com.viaversion.viaversion.connection.UserConnectionImpl;
 import com.viaversion.viaversion.protocol.ProtocolPipelineImpl;
+import com.viaversion.viaversion.protocol.version.BaseVersionProvider;
 import dev.briiqn.loader.ProtocolLibViaLoader;
 import dev.briiqn.loader.ProtocolLibViaPipeline;
 import io.netty.channel.Channel;
@@ -28,13 +31,17 @@ import java.util.function.Function;
 public class MinecraftChannelInitializer<S extends Session & ChannelHandler> extends ChannelInitializer<Channel> {
     private final Function<Channel, S> sessionFactory;
     private final boolean client;
-    private static final ProtocolLibViaLoader VIA_LOADER = new ProtocolLibViaLoader();
+    private static  ProtocolLibViaLoader VIA_LOADER =null;
     @Override
     protected void initChannel(Channel ch) throws Exception {
         S session = createSession(ch);
         try{
-           if(Via.getManager()!=null);
+           if(Via.getManager().getLoader()!=null){
+
+           }
+
         }catch (Throwable throwable){
+            VIA_LOADER= new ProtocolLibViaLoader(session.getPacketProtocol().getProtocolVersion());
             ViaLoader.init(null,VIA_LOADER , null, null, ViaBackwardsPlatformImpl::new);
 
         }

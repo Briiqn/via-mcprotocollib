@@ -1,5 +1,6 @@
 package org.geysermc.mcprotocollib.network.session;
 
+import com.viaversion.viaversion.api.Via;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -237,6 +238,7 @@ public abstract class NetworkSession extends SimpleChannelInboundHandler<Packet>
         if (this.isConnected()) {
             this.callEvent(new DisconnectingEvent(this, reason, cause));
             this.channel.flush().close().awaitUninterruptibly();
+            Via.getManager().getLoader().unload();
             this.callEvent(new DisconnectedEvent(NetworkSession.this, reason, cause));
         } else {
             this.callEvent(new DisconnectedEvent(this, reason, cause));

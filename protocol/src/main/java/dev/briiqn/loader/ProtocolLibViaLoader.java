@@ -13,22 +13,20 @@ public class ProtocolLibViaLoader extends VLLoader {
     @Getter
     @Setter
     private int protocol =770;
-    public ProtocolLibViaLoader() {
-    }
-    public ProtocolLibViaLoader(int protocol) {
-        System.out.println("Using protocol " + protocol);
-        this.protocol = protocol;
-    }
+    public ProtocolLibVersionProvider versionProvider = new ProtocolLibVersionProvider();
 
+    public ProtocolLibViaLoader(int protocol) {
+        this.protocol = protocol;
+        versionProvider.setVersion(protocol);
+    }
     @Override
     public void load() {
         super.load();
 
-        Via.getManager().getProviders().use(VersionProvider.class, new BaseVersionProvider() {
-            @Override
-            public ProtocolVersion getClosestServerProtocol(UserConnection connection) {
-                return ProtocolVersion.getProtocol(protocol);
-            }
-        });
+        Via.getManager().getProviders().use(VersionProvider.class, versionProvider);
+    }
+    @Override
+    public void unload() {
+        super.unload();
     }
 }
