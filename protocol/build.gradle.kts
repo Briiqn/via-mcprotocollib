@@ -38,8 +38,8 @@ dependencies {
     // Test dependencies
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.slf4j.simple)
-    implementation("com.viaversion:viaversion-common:5.5.0")
-    implementation("com.viaversion:viabackwards-common:5.5.0")
+    implementation("com.viaversion:viaversion-common:5.6.0")
+    implementation("com.viaversion:viabackwards-common:5.6.0")
     implementation("com.viaversion:viarewind-common:4.0.10")
     implementation("net.raphimc:ViaLegacy:3.0.11")
     implementation("com.viaversion:viaaprilfools-common:4.0.7-SNAPSHOT")
