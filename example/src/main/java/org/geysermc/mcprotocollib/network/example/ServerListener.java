@@ -1,3 +1,4 @@
+/*
 package org.geysermc.mcprotocollib.network.example;
 
 import org.geysermc.mcprotocollib.network.event.server.ServerAdapter;
@@ -47,3 +48,4 @@ public class ServerListener extends ServerAdapter {
         event.getServer().close(false);
     }
 }
+*/

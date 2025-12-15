@@ -7,19 +7,19 @@ import net.kyori.adventure.text.Component;
 import org.cloudburstmc.nbt.NbtList;
 import org.cloudburstmc.nbt.NbtMap;
 import org.cloudburstmc.nbt.NbtType;
-import org.geysermc.mcprotocollib.auth.GameProfile;
 import org.geysermc.mcprotocollib.protocol.codec.MinecraftTypes;
 import org.geysermc.mcprotocollib.protocol.data.game.Holder;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.Effect;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.EquipmentSlot;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.attribute.ModifierOperation;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
+import org.geysermc.mcprotocollib.protocol.data.game.level.block.BlockEntityType;
 import org.geysermc.mcprotocollib.protocol.data.game.level.sound.Sound;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -34,6 +34,38 @@ public class ItemTypes {
     public static <T> void writeFilterable(ByteBuf buf, Filterable<T> filterable, BiConsumer<ByteBuf, T> writer) {
         writer.accept(buf, filterable.getRaw());
         MinecraftTypes.writeNullable(buf, filterable.getOptional(), writer);
+    }
+
+    public static UseEffects readUseEffects(ByteBuf buf) {
+        boolean canSprint = buf.readBoolean();
+        boolean interactVibrations = buf.readBoolean();
+        float speedMultiplier = buf.readFloat();
+
+        return new UseEffects(canSprint, interactVibrations, speedMultiplier);
+    }
+
+    public static void writeUseEffects(ByteBuf buf, UseEffects useEffects) {
+        buf.writeBoolean(useEffects.canSprint());
+        buf.writeBoolean(useEffects.interactVibrations());
+        buf.writeFloat(useEffects.speedMultiplier());
+    }
+
+    public static Holder<Key> readDamageType(ByteBuf buf) {
+        if (buf.readBoolean()) {
+            return Holder.ofId(MinecraftTypes.readVarInt(buf));
+        } else {
+            return Holder.ofCustom(MinecraftTypes.readResourceLocation(buf));
+        }
+    }
+
+    public static void writeDamageType(ByteBuf buf, Holder<Key> variant) {
+        if (variant.isId()) {
+            buf.writeBoolean(true);
+            MinecraftTypes.writeVarInt(buf, variant.id());
+        } else {
+            buf.writeBoolean(false);
+            MinecraftTypes.writeResourceLocation(buf, variant.custom());
+        }
     }
 
     public static ItemEnchantments readItemEnchantments(ByteBuf buf) {
@@ -106,10 +138,16 @@ public class ItemTypes {
 
     public static DataComponentMatchers readDataComponentMatchers(ByteBuf buf) {
         Map<DataComponentType<?>, DataComponent<?, ?>> exactMatchers = MinecraftTypes.readExactComponentMatcher(buf);
+        Map<DataComponentMatchers.PredicateType, NbtMap> partialMatchers = new HashMap<>();
 
-        int[] partialMatchers = new int[MinecraftTypes.readVarInt(buf)];
-        for (int i = 0; i < partialMatchers.length; i++) {
-            partialMatchers[i] = MinecraftTypes.readVarInt(buf);
+        int count = MinecraftTypes.readVarInt(buf);
+        if (count > 64) {
+            throw new IllegalArgumentException(count + " elements exceeds max size of: " + 64);
+        }
+
+        for (int i = 0; i < count; i++) {
+            DataComponentMatchers.PredicateType type = new DataComponentMatchers.PredicateType(buf.readBoolean(), MinecraftTypes.readVarInt(buf));
+            partialMatchers.put(type, MinecraftTypes.readCompoundTag(buf));
         }
 
         return new DataComponentMatchers(exactMatchers, partialMatchers);
@@ -118,9 +156,16 @@ public class ItemTypes {
     public static void writeDataComponentMatchers(ByteBuf buf, DataComponentMatchers matchers) {
         MinecraftTypes.writeExactComponentMatcher(buf, matchers.exactMatchers());
 
-        MinecraftTypes.writeVarInt(buf, matchers.partialMatchers().length);
-        for (int id : matchers.partialMatchers()) {
-            MinecraftTypes.writeVarInt(buf, id);
+        int count = matchers.partialMatchers().size();
+        if (count > 64) {
+            throw new IllegalArgumentException(count + " elements exceeds max size of: " + 64);
+        }
+
+        MinecraftTypes.writeVarInt(buf, count);
+        for (Map.Entry<DataComponentMatchers.PredicateType, NbtMap> entry : matchers.partialMatchers().entrySet()) {
+            buf.writeBoolean(entry.getKey().isPredicate());
+            MinecraftTypes.writeVarInt(buf, entry.getKey().id());
+            MinecraftTypes.writeAnyTag(buf, entry.getValue());
         }
     }
 
@@ -162,8 +207,28 @@ public class ItemTypes {
         buf.writeFloat(weapon.disableBlockingForSeconds());
     }
 
+    public static AttackRange readAttackRange(ByteBuf buf) {
+        float minRange = buf.readFloat();
+        float maxRange = buf.readFloat();
+        float minCreativeRange = buf.readFloat();
+        float maxCreativeRange = buf.readFloat();
+        float hitboxMargin = buf.readFloat();
+        float mobFactor = buf.readFloat();
+
+        return new AttackRange(minRange, maxRange, minCreativeRange, maxCreativeRange, hitboxMargin, mobFactor);
+    }
+
+    public static void writeAttackRange(ByteBuf buf, AttackRange attackRange) {
+        buf.writeFloat(attackRange.minRange());
+        buf.writeFloat(attackRange.maxRange());
+        buf.writeFloat(attackRange.minCreativeRange());
+        buf.writeFloat(attackRange.maxCreativeRange());
+        buf.writeFloat(attackRange.hitboxMargin());
+        buf.writeFloat(attackRange.mobFactor());
+    }
+
     public static Equippable readEquippable(ByteBuf buf) {
-        EquipmentSlot slot = EquipmentSlot.from(MinecraftTypes.readVarInt(buf));
+        EquipmentSlot slot = EquipmentSlot.fromId(MinecraftTypes.readVarInt(buf));
         Sound equipSound = MinecraftTypes.readSound(buf);
         Key model = MinecraftTypes.readNullable(buf, MinecraftTypes::readResourceLocation);
         Key cameraOverlay = MinecraftTypes.readNullable(buf, MinecraftTypes::readResourceLocation);
@@ -172,7 +237,9 @@ public class ItemTypes {
         boolean swappable = buf.readBoolean();
         boolean damageOnHurt = buf.readBoolean();
         boolean equipOnInteract = buf.readBoolean();
-        return new Equippable(slot, equipSound, model, cameraOverlay, allowedEntities, dispensable, swappable, damageOnHurt, equipOnInteract);
+        boolean canBeSheared = buf.readBoolean();
+        Sound shearingSound = MinecraftTypes.readSound(buf);
+        return new Equippable(slot, equipSound, model, cameraOverlay, allowedEntities, dispensable, swappable, damageOnHurt, equipOnInteract, canBeSheared, shearingSound);
     }
 
     public static void writeEquippable(ByteBuf buf, Equippable equippable) {
@@ -185,6 +252,8 @@ public class ItemTypes {
         buf.writeBoolean(equippable.swappable());
         buf.writeBoolean(equippable.damageOnHurt());
         buf.writeBoolean(equippable.equipOnInteract());
+        buf.writeBoolean(equippable.canBeSheared());
+        MinecraftTypes.writeSound(buf, equippable.shearingSound());
     }
 
     public static BlocksAttacks readBlocksAttacks(ByteBuf buf) {
@@ -225,6 +294,75 @@ public class ItemTypes {
         MinecraftTypes.writeNullable(buf, blocksAttacks.disableSound(), MinecraftTypes::writeSound);
     }
 
+    public static PiercingWeapon readPiercingWeapon(ByteBuf buf) {
+        boolean dealsKnockback = buf.readBoolean();
+        boolean dismounts = buf.readBoolean();
+        Sound sound = MinecraftTypes.readNullable(buf, MinecraftTypes::readSound);
+        Sound hitSound = MinecraftTypes.readNullable(buf, MinecraftTypes::readSound);
+
+        return new PiercingWeapon(dealsKnockback, dismounts, sound, hitSound);
+    }
+
+    public static void writePiercingWeapon(ByteBuf buf, PiercingWeapon piercingWeapon) {
+        buf.writeBoolean(piercingWeapon.dealsKnockback());
+        buf.writeBoolean(piercingWeapon.dismounts());
+        MinecraftTypes.writeNullable(buf, piercingWeapon.sound(), MinecraftTypes::writeSound);
+        MinecraftTypes.writeNullable(buf, piercingWeapon.hitSound(), MinecraftTypes::writeSound);
+    }
+
+    public static KineticWeapon readKineticWeapon(ByteBuf buf) {
+        int contactCooldownTicks = MinecraftTypes.readVarInt(buf);
+        int delayTicks = MinecraftTypes.readVarInt(buf);
+        KineticWeapon.Condition dismountConditions = MinecraftTypes.readNullable(buf, ItemTypes::readKineticCondition);
+        KineticWeapon.Condition knockbackConditions = MinecraftTypes.readNullable(buf, ItemTypes::readKineticCondition);
+        KineticWeapon.Condition damageConditions = MinecraftTypes.readNullable(buf, ItemTypes::readKineticCondition);
+        float forwardMovement = buf.readFloat();
+        float damageMultiplier = buf.readFloat();
+        Sound sound = MinecraftTypes.readNullable(buf, MinecraftTypes::readSound);
+        Sound hitSound = MinecraftTypes.readNullable(buf, MinecraftTypes::readSound);
+
+        return new KineticWeapon(contactCooldownTicks, delayTicks, dismountConditions,
+            knockbackConditions, damageConditions, forwardMovement, damageMultiplier, sound, hitSound);
+    }
+
+    public static void writeKineticWeapon(ByteBuf buf, KineticWeapon kineticWeapon) {
+        MinecraftTypes.writeVarInt(buf, kineticWeapon.contactCooldownTicks());
+        MinecraftTypes.writeVarInt(buf, kineticWeapon.delayTicks());
+        MinecraftTypes.writeNullable(buf, kineticWeapon.dismountConditions(), ItemTypes::writeKineticCondition);
+        MinecraftTypes.writeNullable(buf, kineticWeapon.knockbackConditions(), ItemTypes::writeKineticCondition);
+        MinecraftTypes.writeNullable(buf, kineticWeapon.damageConditions(), ItemTypes::writeKineticCondition);
+        buf.writeFloat(kineticWeapon.forwardMovement());
+        buf.writeFloat(kineticWeapon.damageMultiplier());
+        MinecraftTypes.writeNullable(buf, kineticWeapon.sound(), MinecraftTypes::writeSound);
+        MinecraftTypes.writeNullable(buf, kineticWeapon.hitSound(), MinecraftTypes::writeSound);
+    }
+
+    public static KineticWeapon.Condition readKineticCondition(ByteBuf buf) {
+        int maxDurationTicks = MinecraftTypes.readVarInt(buf);
+        float minSpeed = buf.readFloat();
+        float minRelativeSpeed = buf.readFloat();
+
+        return new KineticWeapon.Condition(maxDurationTicks, minSpeed, minRelativeSpeed);
+    }
+
+    public static void writeKineticCondition(ByteBuf buf, KineticWeapon.Condition condition) {
+        MinecraftTypes.writeVarInt(buf, condition.maxDurationTicks());
+        buf.writeFloat(condition.minSpeed());
+        buf.writeFloat(condition.minRelativeSpeed());
+    }
+
+    public static SwingAnimation readSwingAnimation(ByteBuf buf) {
+        SwingAnimation.Type type = SwingAnimation.Type.from(MinecraftTypes.readVarInt(buf));
+        int duration = MinecraftTypes.readVarInt(buf);
+
+        return new SwingAnimation(type, duration);
+    }
+
+    public static void writeSwingAnimation(ByteBuf buf, SwingAnimation swingAnimation) {
+        MinecraftTypes.writeVarInt(buf, swingAnimation.type().ordinal());
+        MinecraftTypes.writeVarInt(buf, swingAnimation.duration());
+    }
+
     public static ItemAttributeModifiers readItemAttributeModifiers(ByteBuf buf) {
         List<ItemAttributeModifiers.Entry> modifiers = MinecraftTypes.readList(buf, (input) -> {
             int attribute = MinecraftTypes.readVarInt(input);
@@ -235,7 +373,15 @@ public class ItemTypes {
             ItemAttributeModifiers.AttributeModifier modifier = new ItemAttributeModifiers.AttributeModifier(id, amount, operation);
 
             ItemAttributeModifiers.EquipmentSlotGroup slot = ItemAttributeModifiers.EquipmentSlotGroup.from(MinecraftTypes.readVarInt(input));
-            return new ItemAttributeModifiers.Entry(attribute, modifier, slot);
+
+            ItemAttributeModifiers.DisplayType displayType = ItemAttributeModifiers.DisplayType.from(MinecraftTypes.readVarInt(buf));
+            Component overrideText = null;
+            if (displayType == ItemAttributeModifiers.DisplayType.OVERRIDE) {
+                overrideText = MinecraftTypes.readComponent(buf);
+            }
+            ItemAttributeModifiers.Display display = new ItemAttributeModifiers.Display(displayType, overrideText);
+
+            return new ItemAttributeModifiers.Entry(attribute, modifier, slot, display);
         });
 
         return new ItemAttributeModifiers(modifiers);
@@ -248,6 +394,10 @@ public class ItemTypes {
             output.writeDouble(entry.getModifier().getAmount());
             MinecraftTypes.writeVarInt(output, entry.getModifier().getOperation().ordinal());
             MinecraftTypes.writeVarInt(output, entry.getSlot().ordinal());
+            MinecraftTypes.writeVarInt(output, entry.getDisplay().getType().ordinal());
+            if (entry.getDisplay().getType() == ItemAttributeModifiers.DisplayType.OVERRIDE) {
+                MinecraftTypes.writeComponent(output, entry.getDisplay().getComponent());
+            }
         });
     }
 
@@ -491,6 +641,31 @@ public class ItemTypes {
         buf.writeBoolean(pattern.decal());
     }
 
+    public static <T extends Enum<?>> TypedEntityData<T> readTypedEntityData(ByteBuf buf, Function<ByteBuf, T> reader) {
+        return new TypedEntityData<>(reader.apply(buf), MinecraftTypes.readCompoundTag(buf));
+    }
+
+    public static <T> void writeTypedEntityData(ByteBuf buf, TypedEntityData<T> typedEntityData, BiConsumer<ByteBuf, T> writer) {
+        writer.accept(buf, typedEntityData.type());
+        MinecraftTypes.writeAnyTag(buf, typedEntityData.tag());
+    }
+
+    public static EntityType readEntityType(ByteBuf buf) {
+        return EntityType.from(MinecraftTypes.readVarInt(buf));
+    }
+
+    public static void writeEntityType(ByteBuf buf, EntityType state) {
+        MinecraftTypes.writeVarInt(buf, state.ordinal());
+    }
+
+    public static BlockEntityType readBlockEntityType(ByteBuf buf) {
+        return BlockEntityType.from(MinecraftTypes.readVarInt(buf));
+    }
+
+    public static void writeBlockEntityType(ByteBuf buf, BlockEntityType state) {
+        MinecraftTypes.writeVarInt(buf, state.ordinal());
+    }
+
     public static InstrumentComponent readInstrumentComponent(ByteBuf buf) {
         Holder<InstrumentComponent.Instrument> instrumentHolder = null;
         Key instrumentLocation = null;
@@ -654,24 +829,6 @@ public class ItemTypes {
         buf.writeBoolean(explosion.isHasTwinkle());
     }
 
-    public static GameProfile readResolvableProfile(ByteBuf buf) {
-        String name = MinecraftTypes.readNullable(buf, MinecraftTypes::readString);
-        UUID id = MinecraftTypes.readNullable(buf, MinecraftTypes::readUUID);
-        GameProfile profile = new GameProfile(id, name);
-
-        List<GameProfile.Property> properties = MinecraftTypes.readList(buf, MinecraftTypes::readProperty);
-        profile.setProperties(properties);
-
-        return profile;
-    }
-
-    public static void writeResolvableProfile(ByteBuf buf, GameProfile profile) {
-        MinecraftTypes.writeNullable(buf, profile.getName(), MinecraftTypes::writeString);
-        MinecraftTypes.writeNullable(buf, profile.getId(), MinecraftTypes::writeUUID);
-
-        MinecraftTypes.writeList(buf, profile.getProperties(), MinecraftTypes::writeProperty);
-    }
-
     public static BannerPatternLayer readBannerPatternLayer(ByteBuf buf) {
         return new BannerPatternLayer(MinecraftTypes.readHolder(buf, ItemTypes::readBannerPattern), MinecraftTypes.readVarInt(buf));
     }
@@ -709,11 +866,11 @@ public class ItemTypes {
     }
 
     public static BeehiveOccupant readBeehiveOccupant(ByteBuf buf) {
-        return new BeehiveOccupant(MinecraftTypes.readCompoundTag(buf), MinecraftTypes.readVarInt(buf), MinecraftTypes.readVarInt(buf));
+        return new BeehiveOccupant(ItemTypes.readTypedEntityData(buf, ItemTypes::readEntityType), MinecraftTypes.readVarInt(buf), MinecraftTypes.readVarInt(buf));
     }
 
     public static void writeBeehiveOccupant(ByteBuf buf, BeehiveOccupant occupant) {
-        MinecraftTypes.writeAnyTag(buf, occupant.getEntityData());
+        ItemTypes.writeTypedEntityData(buf, occupant.getEntityData(), ItemTypes::writeEntityType);
         MinecraftTypes.writeVarInt(buf, occupant.getTicksInHive());
         MinecraftTypes.writeVarInt(buf, occupant.getMinTicksInHive());
     }

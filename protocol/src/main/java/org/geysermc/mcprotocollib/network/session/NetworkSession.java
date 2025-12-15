@@ -1,6 +1,5 @@
 package org.geysermc.mcprotocollib.network.session;
 
-import com.viaversion.viaversion.api.Via;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -210,16 +209,20 @@ public abstract class NetworkSession extends SimpleChannelInboundHandler<Packet>
         if (!sendingEvent.isCancelled()) {
             final Packet toSend = sendingEvent.getPacket();
             this.channel.writeAndFlush(toSend).addListener((ChannelFutureListener) future -> {
-                if (!future.isSuccess()) {
-                    return;
-                }
-
                 if (onSent != null) {
                     onSent.run();
                 }
 
-                callPacketSent(toSend);
-            }).addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                // See PacketSendListener#thenRun - runnable first, success check later
+                if (!future.isSuccess()) {
+                    // Mirrors Java client handling; uses a void promise when there's no runnable
+                    if (onSent != null) {
+                        channel.pipeline().fireExceptionCaught(future.cause());
+                    }
+                } else {
+                    callPacketSent(toSend);
+                }
+            });
         }
     }
 
@@ -238,7 +241,6 @@ public abstract class NetworkSession extends SimpleChannelInboundHandler<Packet>
         if (this.isConnected()) {
             this.callEvent(new DisconnectingEvent(this, reason, cause));
             this.channel.flush().close().awaitUninterruptibly();
-            Via.getManager().getLoader().unload();
             this.callEvent(new DisconnectedEvent(NetworkSession.this, reason, cause));
         } else {
             this.callEvent(new DisconnectedEvent(this, reason, cause));

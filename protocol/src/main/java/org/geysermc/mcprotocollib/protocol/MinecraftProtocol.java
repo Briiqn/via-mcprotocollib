@@ -49,7 +49,7 @@ public class MinecraftProtocol extends PacketProtocol {
     @Getter
     private final PacketCodec codec;
     @Getter
-    private int protocolVersion = 770; //1.21.5
+    private int protocolVersion = 774; //1.21.11
     private ProtocolState inboundState;
     private PacketRegistry inboundStateRegistry;
 
@@ -114,11 +114,11 @@ public class MinecraftProtocol extends PacketProtocol {
     public MinecraftProtocol(@NonNull PacketCodec codec, @NonNull String username) {
         this(codec, new GameProfile(UUID.randomUUID(), username), null);
     }
-public MinecraftProtocol(String username, int protocolVersion){
-    this(new GameProfile(UUID.randomUUID(), username), null);
-    this.protocolVersion=protocolVersion;
-    System.out.println("Using version: "+ ProtocolVersion.getProtocol(protocolVersion).getName() + " (" + protocolVersion+")");
-}
+    public MinecraftProtocol(String username, int protocolVersion){
+        this(new GameProfile(UUID.randomUUID(), username), null);
+        this.protocolVersion=protocolVersion;
+        System.out.println("Using version: "+ ProtocolVersion.getProtocol(protocolVersion).getName() + " (" + protocolVersion+")");
+    }
     /**
      * Constructs a new MinecraftProtocol instance for logging in.
      *

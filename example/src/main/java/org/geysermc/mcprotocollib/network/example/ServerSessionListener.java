@@ -1,3 +1,4 @@
+/*
 package org.geysermc.mcprotocollib.network.example;
 
 import org.geysermc.mcprotocollib.network.Session;
@@ -42,3 +43,4 @@ public class ServerSessionListener extends SessionAdapter {
         log.info("SERVER Disconnected: {}", event.getReason());
     }
 }
+*/

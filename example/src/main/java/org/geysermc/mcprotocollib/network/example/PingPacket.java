@@ -1,3 +1,4 @@
+/*
 package org.geysermc.mcprotocollib.network.example;
 
 import io.netty.buffer.ByteBuf;
@@ -19,3 +20,4 @@ public class PingPacket implements Packet {
         return this.id;
     }
 }
+*/

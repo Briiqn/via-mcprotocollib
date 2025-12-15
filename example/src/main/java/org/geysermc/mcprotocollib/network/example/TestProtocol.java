@@ -1,3 +1,4 @@
+/*
 package org.geysermc.mcprotocollib.network.example;
 
 import io.netty.buffer.ByteBuf;
@@ -86,3 +87,4 @@ public class TestProtocol extends MinecraftProtocol {
         return registry;
     }
 }
+*/

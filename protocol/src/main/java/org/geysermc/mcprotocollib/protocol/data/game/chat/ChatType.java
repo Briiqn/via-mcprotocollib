@@ -6,7 +6,7 @@ import java.util.List;
 
 public record ChatType(ChatTypeDecoration chat, ChatTypeDecoration narration) {
     public record ChatTypeDecorationImpl(String translationKey,
-                                         List<ChatTypeDecoration.Parameter> parameters,
+                                         List<Parameter> parameters,
                                          NbtMap style) implements ChatTypeDecoration {
     }
 }

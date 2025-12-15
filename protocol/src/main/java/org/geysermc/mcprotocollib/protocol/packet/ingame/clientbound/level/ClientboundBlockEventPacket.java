@@ -40,15 +40,17 @@ public class ClientboundBlockEventPacket implements MinecraftPacket {
     private static final int NOTE_BLOCK = 109;
     private static final int STICKY_PISTON = 128;
     private static final int PISTON = 138;
-    private static final int MOB_SPAWNER = 185;
-    private static final int CHEST = 188;
-    private static final int ENDER_CHEST = 369;
-    private static final int TRAPPED_CHEST = 438;
-    private static final int END_GATEWAY = 635;
-    private static final int SHULKER_BOX_LOWER = 645;
-    private static final int SHULKER_BOX_HIGHER = 661;
-    private static final int BELL = 815;
-    private static final int DECORATED_POT = 1091;
+    private static final int MOB_SPAWNER = 197;
+    private static final int CHEST = 200;
+    private static final int ENDER_CHEST = 399;
+    private static final int TRAPPED_CHEST = 468;
+    private static final int END_GATEWAY = 665;
+    private static final int SHULKER_BOX_LOWER = 675;
+    private static final int SHULKER_BOX_HIGHER = 691;
+    private static final int BELL = 846;
+    private static final int COPPER_CHEST_LOWER = 1079;
+    private static final int COPPER_CHEST_HIGHER = 1086;
+    private static final int DECORATED_POT = 1153;
     private static final Logger log = LoggerFactory.getLogger(ClientboundBlockEventPacket.class);
 
     private final @NonNull Vector3i position;
@@ -76,7 +78,8 @@ public class ClientboundBlockEventPacket implements MinecraftPacket {
                 this.type = MobSpawnerValueType.from(rawType - 1);
                 this.value = new MobSpawnerValue();
             } else if (this.blockId == CHEST || this.blockId == ENDER_CHEST || this.blockId == TRAPPED_CHEST
-                || (this.blockId >= SHULKER_BOX_LOWER && this.blockId <= SHULKER_BOX_HIGHER)) {
+                || (this.blockId >= SHULKER_BOX_LOWER && this.blockId <= SHULKER_BOX_HIGHER)
+                || (this.blockId >= COPPER_CHEST_LOWER && this.blockId <= COPPER_CHEST_HIGHER)) {
                 this.type = ChestValueType.from(rawType - 1);
                 this.value = new ChestValue(rawValue);
             } else if (this.blockId == END_GATEWAY) {

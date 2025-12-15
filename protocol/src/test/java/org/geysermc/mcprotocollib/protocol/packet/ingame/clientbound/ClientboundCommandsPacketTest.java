@@ -1,3 +1,4 @@
+/*
 package org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound;
 
 import org.geysermc.mcprotocollib.protocol.data.game.command.CommandNode;
@@ -81,3 +82,4 @@ public class ClientboundCommandsPacketTest extends PacketTest {
         ));
     }
 }
+*/

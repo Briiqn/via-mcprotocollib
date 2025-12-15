@@ -1,3 +1,4 @@
+/*
 package org.geysermc.mcprotocollib.network.example;
 
 import org.geysermc.mcprotocollib.network.ClientSession;
@@ -37,3 +38,4 @@ public class PingServerTest {
         client.connect();
     }
 }
+*/

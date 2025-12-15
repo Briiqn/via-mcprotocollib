@@ -1,3 +1,4 @@
+/*
 package org.geysermc.mcprotocollib.auth.example;
 
 import net.raphimc.minecraftauth.MinecraftAuth;
@@ -11,7 +12,9 @@ import org.geysermc.mcprotocollib.network.ProxyInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MinecraftAuthTest {
+public class */
+/**//*
+MinecraftAuthTest {
     private static final Logger log = LoggerFactory.getLogger(MinecraftAuthTest.class);
     private static final String EMAIL = "Username@mail.com";
     private static final String PASSWORD = "Password";
@@ -51,3 +54,4 @@ public class MinecraftAuthTest {
         }
     }
 }
+*/

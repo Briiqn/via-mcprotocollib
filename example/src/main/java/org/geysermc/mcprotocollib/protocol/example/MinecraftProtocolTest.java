@@ -1,3 +1,4 @@
+/*
 package org.geysermc.mcprotocollib.protocol.example;
 
 import net.kyori.adventure.key.Key;
@@ -48,7 +49,9 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.BitSet;
 
-public class MinecraftProtocolTest {
+public class */
+/**//*
+MinecraftProtocolTest {
     private static final Logger log = LoggerFactory.getLogger(MinecraftProtocolTest.class);
     private static final boolean SPAWN_SERVER = true;
     private static final boolean ENCRYPT_CONNECTION = true;
@@ -237,3 +240,4 @@ public class MinecraftProtocolTest {
         client.connect();
     }
 }
+*/

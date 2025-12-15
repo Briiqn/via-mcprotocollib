@@ -170,7 +170,7 @@ public class GameProfile {
      */
     public Map<TextureType, Texture> getTextures(boolean requireSecure) throws IllegalStateException {
         if (this.textures == null || (requireSecure && !this.texturesVerified)) {
-            GameProfile.Property textures = this.getProperty("textures");
+            Property textures = this.getProperty("textures");
             if (textures != null) {
                 if (requireSecure) {
                     if (!textures.hasSignature()) {
@@ -192,7 +192,7 @@ public class GameProfile {
 
                 if (result != null && result.textures != null) {
                     if (requireSecure) {
-                        for (GameProfile.Texture texture : result.textures.values()) {
+                        for (Texture texture : result.textures.values()) {
                             if (TextureUrlChecker.isAllowedTextureDomain(texture.getURL())) {
                                 continue;
                             }
@@ -451,6 +451,6 @@ public class GameProfile {
         public UUID profileId;
         public String profileName;
         public boolean isPublic;
-        public Map<GameProfile.TextureType, GameProfile.Texture> textures;
+        public Map<TextureType, Texture> textures;
     }
 }

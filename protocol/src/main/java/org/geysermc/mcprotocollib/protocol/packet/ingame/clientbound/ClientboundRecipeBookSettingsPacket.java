@@ -5,36 +5,33 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.With;
 import org.geysermc.mcprotocollib.protocol.codec.MinecraftPacket;
-import org.geysermc.mcprotocollib.protocol.data.game.inventory.CraftingBookStateType;
-
-import java.util.EnumMap;
-import java.util.Map;
 
 @Data
 @With
 @AllArgsConstructor
 public class ClientboundRecipeBookSettingsPacket implements MinecraftPacket {
-    private final Map<CraftingBookStateType, TypeSettings> states;
+    private final TypeSettings crafting;
+    private final TypeSettings furnace;
+    private final TypeSettings blastFurnace;
+    private final TypeSettings smoker;
 
     public ClientboundRecipeBookSettingsPacket(ByteBuf in) {
-        this.states = new EnumMap<>(CraftingBookStateType.class);
-
-        for (CraftingBookStateType type : CraftingBookStateType.values()) {
-            boolean open = in.readBoolean();
-            boolean filtering = in.readBoolean();
-            if (open || filtering) {
-                this.states.put(type, new TypeSettings(open, filtering));
-            }
-        }
+        this.crafting = new TypeSettings(in.readBoolean(), in.readBoolean());
+        this.furnace = new TypeSettings(in.readBoolean(), in.readBoolean());
+        this.blastFurnace = new TypeSettings(in.readBoolean(), in.readBoolean());
+        this.smoker = new TypeSettings(in.readBoolean(), in.readBoolean());
     }
 
     @Override
-    public void serialize(ByteBuf buf) {
-        for (CraftingBookStateType type : CraftingBookStateType.values()) {
-            TypeSettings typeSettings = this.states.get(type);
-            buf.writeBoolean(typeSettings == null ? false : typeSettings.open());
-            buf.writeBoolean(typeSettings == null ? false : typeSettings.filtering());
-        }
+    public void serialize(ByteBuf out) {
+        out.writeBoolean(this.crafting.open());
+        out.writeBoolean(this.crafting.filtering());
+        out.writeBoolean(this.furnace.open());
+        out.writeBoolean(this.furnace.filtering());
+        out.writeBoolean(this.blastFurnace.open());
+        out.writeBoolean(this.blastFurnace.filtering());
+        out.writeBoolean(this.smoker.open());
+        out.writeBoolean(this.smoker.filtering());
     }
 
     @Override
