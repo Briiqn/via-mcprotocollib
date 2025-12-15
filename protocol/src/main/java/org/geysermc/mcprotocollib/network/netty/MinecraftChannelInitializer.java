@@ -26,7 +26,7 @@ import java.util.function.Function;
 public class MinecraftChannelInitializer<S extends Session & ChannelHandler> extends ChannelInitializer<Channel> {
     private final Function<Channel, S> sessionFactory;
     private final boolean client;
-    private static final ProtocolLibViaLoader VIA_LOADER = new ProtocolLibViaLoader(770);
+    private static final ProtocolLibViaLoader VIA_LOADER = new ProtocolLibViaLoader(774);
     private static boolean viaInitialized = false;
 
     @Override
